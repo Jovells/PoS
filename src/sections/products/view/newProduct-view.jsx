@@ -2,32 +2,51 @@ import { faker } from '@faker-js/faker';
 import { Box, Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { useRef, useState } from 'react';
 import Iconify from 'src/components/iconify/iconify';
+import { put } from '@vercel/blob';
+import { useNavigate } from 'react-router-dom';
 
 
 const currencies = ['USDT', 'MATIC', 'USDC', 'DAI'];
 
 export default function NewProduct() {
+    const navigate = useNavigate();
     const [image, setImage] = useState(null);
     const fileInputRef = useRef();
     function handleFileChange(e) {
-        setImage(e.target.files[0]);
+        const file = e.target.files[0];
+        if(file.size > 1024 * 1024 * 4) {
+            alert('File size should be less than 4MB');
+            return;
+        }
+        setImage(file);
     }
     
-    function handleNewProduct(e) {
+    async function handleNewProduct(e) {
       e.preventDefault();
       console.log('New product created');
       const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
     console.log(data)
-    
+    let blob;
+
+  if (image) {
+       blob = await put(image.name, image, {
+          access: 'public',
+          token: import.meta.env.VITE_BLOB_READ_WRITE_TOKEN
+        });
+    // console.log(blob.url);
+  }
+
       const product = {
         id: faker.string.uuid(),
-        cover: image && URL.createObjectURL(image),
+        cover: blob?.url,
         name: data.name,
         price: data.price,
         quantiiy: data.quantity,
         currency: data.currency,
       };
+      console.log(product);
+      navigate('/products')
     }
   return (
     <div>

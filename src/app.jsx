@@ -2,6 +2,7 @@
 import 'src/global.css';
 
 import { useScrollToTop } from 'src/hooks/use-scroll-to-top';
+import './polyfills';
 
 import Router from 'src/routes/sections';
 import ThemeProvider from 'src/theme';
@@ -14,12 +15,12 @@ import { publicProvider } from 'wagmi/providers/public';
 
 const { chains, publicClient } = configureChains(
   [mainnet, polygonMumbai],
-  [alchemyProvider({ apiKey: import.meta.env.ALCHEMY_API_KEY }), publicProvider()]
+  [alchemyProvider({ apiKey: import.meta.env.VITE_ALCHEMY_API_KEY|| 'hjhjhjhj' }), publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'PoS',
-  projectId: import.meta.env.PUBLIC_WALLET_CONNECT_PROJECT_ID || "3a8170812b534d0ff9d794f19a901d64",
+  projectId: import.meta.env.VITE_PUBLIC_WALLET_CONNECT_PROJECT_ID || "3a8170812b534d0ff9d794f19a901d64",
   chains,
 });
 

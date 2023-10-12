@@ -2,13 +2,14 @@ import { lazy, Suspense } from 'react';
 import { Outlet, Navigate, useRoutes } from 'react-router-dom';
 
 import DashboardLayout from 'src/layouts/dashboard';
-import NewProduct from 'src/sections/products/view/newProduct-view';
 import { useAccount } from 'wagmi';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const UserPage = lazy(() => import('src/pages/user'));
 export const LoginPage = lazy(() => import('src/pages/login'));
+export const ProductDetailsPage = lazy(() => import('src/pages/productDetails'));
+export const NewProductPage = lazy(() => import('src/pages/newProduct'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
@@ -31,8 +32,12 @@ export default function Router() {
       { element: <IndexPage />, index: true },
       { path: 'user', element: <UserPage /> },
       { path: 'products', element: <ProductsPage /> },
-      {path : 'products/new', element: <NewProduct />},
+      {path : 'products/new', element: <NewProductPage />},
       { path: 'blog', element: <BlogPage /> },
+      {
+        path: 'products/productDetails/:productId',
+        element: <ProductDetailsPage/>
+      },
     ],
   } : {
     path: 'admin',
@@ -51,6 +56,10 @@ export default function Router() {
       children: [
         { element: <IndexPage />, index: true },
         { path: 'products', element: <ProductsPage /> },
+        {
+          path: 'products/productDetails/:productId',
+          element: <ProductDetailsPage/>
+        },
       ],
     },
     {
@@ -66,6 +75,7 @@ export default function Router() {
       path: '404',
       element: <Page404 />,
     },
+
     {
       path: '*',
       element: <Navigate to="/404" replace />,

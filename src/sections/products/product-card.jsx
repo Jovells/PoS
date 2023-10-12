@@ -10,6 +10,8 @@ import { fCurrency } from 'src/utils/format-number';
 
 import Label from 'src/components/label';
 import { ColorPreview } from 'src/components/color-utils';
+import { RouterLink } from 'src/routes/components';
+import { CardActionArea } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -58,12 +60,13 @@ export default function ShopProductCard({ product }) {
         {product.priceSale && fCurrency(product.priceSale)}
       </Typography>
       &nbsp;
-      {fCurrency(product.price)}
+      {fCurrency(product.price, product.currency)}
     </Typography>
   );
 
   return (
-    <Card>
+    <Card >
+      <CardActionArea component={RouterLink} to={`/products/productDetails/${product.id}`}>
       <Box sx={{ pt: '100%', position: 'relative' }}>
         {product.status && renderStatus}
 
@@ -80,6 +83,7 @@ export default function ShopProductCard({ product }) {
           {renderPrice}
         </Stack>
       </Stack>
+      </CardActionArea>
     </Card>
   );
 }
