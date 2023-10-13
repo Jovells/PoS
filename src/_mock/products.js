@@ -51,7 +51,7 @@ export const products = [...Array(24)].map((_, index) => {
     name: PRODUCT_NAME[index],
     price: faker.number.int({ min: 4, max: 99, precision: 0.01 }),
     quantity: faker.number.int({ min: 1, max: 1000 }),
-    currency: faker.finance.currencyCode(),
+    currency: "USD",
     priceSale: setIndex % 3 ? null : faker.number.int({ min: 19, max: 29, precision: 0.01 }),
     colors:
       (setIndex === 1 && PRODUCT_COLOR.slice(0, 2)) ||

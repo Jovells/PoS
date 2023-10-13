@@ -11,7 +11,9 @@ function handleIncrease(){
         if (product.quantity <= prev.quantity ){
           return prev
         }
-        return {quantity : prev.quantity + 1, price: prev.price + product.price}  })
+        const price = quantityAndPrice.paymentCurrency === 'USDT' ? product.price * (prev.quantity + 1) : product.price * (prev.quantity +1) * 1.96
+
+        return {...prev, quantity : prev.quantity + 1, price}  })
 }
 function handleDecrease(){
     
@@ -19,7 +21,9 @@ function handleDecrease(){
         if (prev.quantity - 1 < 1 ){
             return prev
         }
-        return{quantity : prev.quantity - 1, price: prev.price - product.price}  })
+        const price = quantityAndPrice.paymentCurrency === 'USDT' ? product.price * (prev.quantity - 1) : product.price * (prev.quantity -1) * 1.96
+
+        return{...prev, quantity : prev.quantity - 1, price}  })
 }
   return (
     <Stack alignItems={"flex-end"}>

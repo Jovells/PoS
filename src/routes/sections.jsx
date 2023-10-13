@@ -6,7 +6,7 @@ import { useAccount } from 'wagmi';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
 export const BlogPage = lazy(() => import('src/pages/blog'));
-export const UserPage = lazy(() => import('src/pages/user'));
+export const OrdersPage = lazy(() => import('src/pages/order'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const ProductDetailsPage = lazy(() => import('src/pages/productDetails'));
 export const NewProductPage = lazy(() => import('src/pages/newProduct'));
@@ -30,7 +30,7 @@ export default function Router() {
     ),
     children: [
       { element: <IndexPage />, index: true },
-      { path: 'user', element: <UserPage /> },
+      { path: 'orders', element: <OrdersPage /> },
       { path: 'products', element: <ProductsPage /> },
       {path : 'products/new', element: <NewProductPage />},
       { path: 'blog', element: <BlogPage /> },
@@ -56,6 +56,8 @@ export default function Router() {
       children: [
         { element: <IndexPage />, index: true },
         { path: 'products', element: <ProductsPage /> },
+      { path: 'orders', element: <OrdersPage /> },
+
         {
           path: 'products/productDetails/:productId',
           element: <ProductDetailsPage/>

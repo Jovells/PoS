@@ -1,4 +1,4 @@
-import { Button, Stack, Typography } from '@mui/material';
+import { Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2/Grid2';
 import { products } from 'src/_mock/products';
 import Iconify from 'src/components/iconify/iconify';
@@ -12,7 +12,16 @@ import { useParams } from 'react-router-dom';
 export default function ProductDetails() {
   const params = useParams()
   const product = products.find(product => product.id === params.productId)
-  const [quantityAndPrice, setQuantityAndPrice] = useState({quantity: 1, price: product.price});
+  const [quantityAndPrice, setQuantityAndPrice] = useState({quantity: 1, price: product.price, paymentCurrency: "USDT"});
+
+  function handlePaymentCurrency(e){
+    e.preventDefault();
+    const selectedCurrency = e.target.value;
+    setQuantityAndPrice(prev=>{
+      const price = selectedCurrency === 'USDT' ? product.price * prev.quantity : product.price * prev.quantity * 1.96
+      return {...prev, price: price, paymentCurrency: selectedCurrency}
+    })
+  }
   
   function handlePurchase(e){
     e.preventDefault()
@@ -113,7 +122,23 @@ export default function ProductDetails() {
             <Typography >
               Final price
             </Typography>
-            <Typography >{fCurrency(quantityAndPrice.price, product.currency)}</Typography>
+            <Typography >{fCurrency(quantityAndPrice.price, quantityAndPrice.paymentCurrency)}</Typography>
+          </Stack>
+
+          <Stack
+            width={1}
+            alignItems={'baseline'}
+            direction={'row'}
+            justifyContent={'space-between'}
+            columnGap={2}
+          >
+            <Typography >
+              Payment Currency
+            </Typography>
+            <TextField defaultValue={"USDT"} name={"paymentCurrency"} select onChange={handlePaymentCurrency} >
+              <MenuItem value={'MATIC'}>MATIC</MenuItem>
+              <MenuItem value={"USDT"}>USDT</MenuItem>
+            </TextField>
           </Stack>
 
           <Button fullWidth size="large" variant="contained" type="submit">

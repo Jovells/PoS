@@ -13,29 +13,14 @@ const admin = [
     icon: icon('ic_analytics'),
   },
   {
-    title: 'user',
-    path: 'user',
+    title: 'orders',
+    path: 'orders',
     icon: icon('ic_user'),
   },
   {
-    title: 'product',
+    title: 'products',
     path: 'products',
     icon: icon('ic_cart'),
-  },
-  {
-    title: 'blog',
-    path: 'blog',
-    icon: icon('ic_blog'),
-  },
-  {
-    title: 'login',
-    path: 'login',
-    icon: icon('ic_lock'),
-  },
-  {
-    title: 'Not found',
-    path: '/404',
-    icon: icon('ic_disabled'),
   },
 ];
 const user = [
@@ -47,6 +32,11 @@ const user = [
   {
     title: 'products',
     path: 'products',
+    icon: icon('ic_cart'),
+  },
+  {
+    title: 'orders',
+    path: 'orders',
     icon: icon('ic_cart'),
   },
 ];
