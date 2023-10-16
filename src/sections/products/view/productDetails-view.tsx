@@ -1,33 +1,47 @@
 import { Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2/Grid2';
-import { products } from 'src/_mock/products';
 import Iconify from 'src/components/iconify/iconify';
 import { fCurrency } from 'src/utils/format-number';
 import NumberSelector from '../numberSelector';
 import { LoadingButton } from '@mui/lab';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import useContracts from 'src/hooks/contract/useContracts';
+import {Product} from 'src/hooks/contract/contractContext';
+import { payMethods } from 'src/constants';
 
 
 export default function ProductDetails() {
-  const params = useParams()
-  const product = products.find(product => product.id === params.productId)
-  const [quantityAndPrice, setQuantityAndPrice] = useState({quantity: 1, price: product.price, paymentCurrency: "USDT"});
+  const params = useParams();
+  const {products, posContract, priceOracleContract} = useContracts();
+  //@ts-ignore
+  const [exchangeRate, setExchangeRate] = useState(0n);
+  useEffect(()=>{
+    async function getExchangeRate(){
+      const [, rate] = await priceOracleContract.read.latestRoundData();
+      setExchangeRate(BigInt(1e20) / rate);
+    }
+    getExchangeRate()
+  })
+  const product = products.find(product => product.productId === BigInt(params.productId)) || {} as Product;
+  console.log(products);
+  const [quantityAndPrice, setQuantityAndPrice] = useState({quantity: 1n, price: product.price, paymentCurrency: payMethods.USDT});
 
   function handlePaymentCurrency(e){
     e.preventDefault();
     const selectedCurrency = e.target.value;
     setQuantityAndPrice(prev=>{
-      const price = selectedCurrency === 'USDT' ? product.price * prev.quantity : product.price * prev.quantity * 1.96
+      const price = selectedCurrency === 'USDT' ? product.price * prev.quantity : product.price * prev.quantity * exchangeRate
       return {...prev, price: price, paymentCurrency: selectedCurrency}
     })
   }
   
-  function handlePurchase(e){
+  async function handlePurchase(e){
     e.preventDefault()
     const data = new FormData(e.currentTarget);
     const purchaseDetails = Object.fromEntries(data.entries());
-    purchaseDetails.id = product.id
+    purchaseDetails.id = product.productId
+    posContract.write.purchaseProduct([purchaseDetails.id, purchaseDetails.quantity, purchaseDetails.paymentCurrency])
 
     console.log('purchasing', purchaseDetails)
   }
@@ -40,7 +54,7 @@ export default function ProductDetails() {
         borderRadius={'10px'}
         border={'1px solid grey'}
         sx={{
-          backgroundImage: `url("${product.cover}")` || '',
+          backgroundImage: `url("${product.imageUrl}")` || '',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -49,7 +63,7 @@ export default function ProductDetails() {
         alignItems={'center'}
         cursor={'pointer'}
       >
-        {!product.cover && (
+        {!product.imageUrl && (
           <Iconify icon="ic:round-insert-photo" sx={{ fontSize: 30, color: 'grey.500' }} />
         )}
       </Grid>
@@ -110,7 +124,7 @@ export default function ProductDetails() {
             <Typography >
               Quantity
             </Typography>
-            <NumberSelector name="quantity" product = {product} quantityAndPrice={quantityAndPrice} setQuantityAndPrice={setQuantityAndPrice} />
+            <NumberSelector name="quantity" exchangeRate={exchangeRate} product = {product} quantityAndPrice={quantityAndPrice} setQuantityAndPrice={setQuantityAndPrice} />
           </Stack>
           <Stack
             width={1}
@@ -135,9 +149,9 @@ export default function ProductDetails() {
             <Typography >
               Payment Currency
             </Typography>
-            <TextField defaultValue={"USDT"} name={"paymentCurrency"} select onChange={handlePaymentCurrency} >
-              <MenuItem value={'MATIC'}>MATIC</MenuItem>
-              <MenuItem value={"USDT"}>USDT</MenuItem>
+            <TextField defaultValue={payMethods.USDT} name={"paymentCurrency"} select onChange={handlePaymentCurrency} >
+              <MenuItem value={payMethods.ETH}>MATIC</MenuItem>
+              <MenuItem value={payMethods.USDT}>USDT</MenuItem>
             </TextField>
           </Stack>
 

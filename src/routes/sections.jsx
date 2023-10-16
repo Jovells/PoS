@@ -1,5 +1,8 @@
 import { lazy, Suspense } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import { Outlet, Navigate, useRoutes } from 'react-router-dom';
+import ContractContext from 'src/hooks/contract/contractContext';
+import useContracts from 'src/hooks/contract/useContracts';
 
 import DashboardLayout from 'src/layouts/dashboard';
 import { useAccount } from 'wagmi';
@@ -13,65 +16,68 @@ export const NewProductPage = lazy(() => import('src/pages/newProduct'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
+const queryClient = new QueryClient();
+
+
 // ----------------------------------------------------------------------
+function Inner() {
+  return (
+    <DashboardLayout>
+      <QueryClientProvider client={queryClient}>
+        <ContractContext>
+          <Suspense fallback={'loading'}>
+            <Outlet />
+          </Suspense>
+        </ContractContext>
+      </QueryClientProvider>
+    </DashboardLayout>
+  );
+}
 
 export default function Router() {
-  const account = useAccount();
+  const { isOwner } = useContracts();
 
-  const isAdmin = account.address === '0x6435cE1AE109cEC3C7CCD03E851c43AaeD684Cc7';
-
-  const renderAdmin = isAdmin ? {
-    element: (
-      <DashboardLayout>
-        <Suspense>
-          <Outlet />
-        </Suspense>
-      </DashboardLayout>
-    ),
-    children: [
-      { element: <IndexPage />, index: true },
-      { path: 'orders', element: <OrdersPage /> },
-      { path: 'products', element: <ProductsPage /> },
-      {path : 'products/new', element: <NewProductPage />},
-      { path: 'blog', element: <BlogPage /> },
-      {
-        path: 'products/productDetails/:productId',
-        element: <ProductDetailsPage/>
-      },
-    ],
-  } : {
-    path: 'admin',
-    element: <Navigate to="/login" replace />,
-  };
+  const renderAdmin = isOwner
+    ? {
+        element: <Inner />,
+        children: [
+          { element: <IndexPage />, index: true },
+          { path: 'orders', element: <OrdersPage /> },
+          { path: 'products', element: <ProductsPage /> },
+          { path: 'products/new', element: <NewProductPage /> },
+          { path: 'blog', element: <BlogPage /> },
+          {
+            path: 'products/productDetails/:productId',
+            element: <ProductDetailsPage />,
+          },
+        ],
+      }
+    : {
+        path: 'admin',
+        element: <Navigate to="/login" replace />,
+      };
 
   const routes = useRoutes([
     {
-      element: (
-        <DashboardLayout>
-          <Suspense>
-            <Outlet />
-          </Suspense>
-        </DashboardLayout>
-      ),
+      element: <Inner />,
       children: [
         { element: <IndexPage />, index: true },
         { path: 'products', element: <ProductsPage /> },
-      { path: 'orders', element: <OrdersPage /> },
+        { path: 'orders', element: <OrdersPage /> },
 
         {
           path: 'products/productDetails/:productId',
-          element: <ProductDetailsPage/>
+          element: <ProductDetailsPage />,
         },
       ],
     },
     {
       path: 'admin',
-      ...renderAdmin
-
+      ...renderAdmin,
     },
     {
       path: 'login',
-      element: isAdmin? <Navigate to="/admin" replace /> : <LoginPage />,
+      element: isOwner ? <Navigate to="/admin" replace /> : <LoginPage />,
     },
     {
       path: '404',

@@ -4,11 +4,13 @@ import { useRef, useState } from 'react';
 import Iconify from 'src/components/iconify/iconify';
 import { put } from '@vercel/blob';
 import { useNavigate } from 'react-router-dom';
+import useContracts from 'src/hooks/contract/useContracts';
 
 
 const currencies = ['USDT', 'MATIC', 'USDC', 'DAI'];
 
 export default function NewProduct() {
+  const {account, posContract, priceOracleContract, publicClient, usdtContract} = useContracts()
     const navigate = useNavigate();
     const [image, setImage] = useState(null);
     const fileInputRef = useRef();
@@ -39,14 +41,18 @@ export default function NewProduct() {
 
       const product = {
         id: faker.string.uuid(),
-        cover: blob?.url,
+        imageUrl: blob?.url,
         name: data.name,
         price: data.price,
-        quantiiy: data.quantity,
+        quantity: data.quantity,
         currency: data.currency,
       };
       console.log(product);
-      navigate('/products')
+
+      const hash = await posContract.write.addProduct([product.name, product.price, product.quantity, product.imageUrl])
+      const receipt = publicClient.waitForTransactionReceipt(hash);
+
+      navigate('/products/')
     }
   return (
     <div>

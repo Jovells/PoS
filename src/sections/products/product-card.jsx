@@ -36,13 +36,14 @@ export default function ShopProductCard({ product }) {
     <Box
       component="img"
       alt={product.name}
-      src={product.cover}
+      src={product.imageUrl}
       sx={{
         top: 0,
         width: 1,
         height: 1,
         objectFit: 'cover',
         position: 'absolute',
+        borderBottom: "1px solid lightgrey",
       }}
     />
   );
@@ -66,7 +67,7 @@ export default function ShopProductCard({ product }) {
 
   return (
     <Card >
-      <CardActionArea component={RouterLink} to={`/products/productDetails/${product.id}`}>
+      <CardActionArea component={RouterLink} to={`/products/productDetails/${product.productId}`}>
       <Box sx={{ pt: '100%', position: 'relative' }}>
         {product.status && renderStatus}
 
@@ -74,14 +75,14 @@ export default function ShopProductCard({ product }) {
       </Box>
 
       <Stack spacing={2} sx={{ p: 3 }}>
-        <Link color="inherit" underline="hover" variant="subtitle2" noWrap>
+        <Typography color="inherit" underline="hover" variant="subtitle2" noWrap>
           {product.name}
-        </Link>
-
+        </Typography>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <ColorPreview colors={product.colors} />
+          <Typography variant='caption'>{product.sales.toString()} sold</Typography>
           {renderPrice}
         </Stack>
+
       </Stack>
       </CardActionArea>
     </Card>

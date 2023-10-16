@@ -8,19 +8,24 @@ import Router from 'src/routes/sections';
 import ThemeProvider from 'src/theme';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import {  WagmiConfig, createConfig, configureChains } from 'wagmi';
+import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { mainnet, polygonMumbai } from 'wagmi/chains';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
 
+
 const { chains, publicClient } = configureChains(
   [mainnet, polygonMumbai],
-  [alchemyProvider({ apiKey: import.meta.env.VITE_ALCHEMY_API_KEY|| 'hjhjhjhj' }), publicProvider()]
+  [
+    alchemyProvider({ apiKey: import.meta.env.VITE_ALCHEMY_API_KEY || 'hjhjhjhj' }),
+    publicProvider(),
+  ]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'PoS',
-  projectId: import.meta.env.VITE_PUBLIC_WALLET_CONNECT_PROJECT_ID || "3a8170812b534d0ff9d794f19a901d64",
+  projectId:
+    import.meta.env.VITE_PUBLIC_WALLET_CONNECT_PROJECT_ID || '3a8170812b534d0ff9d794f19a901d64',
   chains,
 });
 
@@ -37,7 +42,9 @@ export default function App() {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
         <ThemeProvider>
-          <Router />
+
+              <Router />
+
         </ThemeProvider>
       </RainbowKitProvider>
     </WagmiConfig>

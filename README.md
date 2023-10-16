@@ -55,11 +55,11 @@ The frontend of the DApp is built using Vite and React. This is where you can fi
 1. Create a `.env` file in the root directory with the following environment variables:
 
 ```bash
-VITE_ALCHEMY_API_KEY=<Your Alchemy API Key>
-PRIVATE_KEY=<Your Private Key>
+VITE_ALCHEMY_API_KEY=`<Your Alchemy API Key>`
+PRIVATE_KEY=`<Your Private Key>``
 ```
 
-Make sure to replace `<Your Alchemy API Key>` and `<Your Rinkeby Private Key>` with your actual API key and private key information.
+Make sure to replace `<Your Alchemy API Key>` and `<Your Private Key>` with your actual API key and private key information.
 
 2. Compile and deploy the smart contracts to the Rinkeby test network using Hardhat. Run the following commands:
 
@@ -88,6 +88,3 @@ We welcome contributions to improve this DApp. Feel free to fork the repository,
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-We hope you find this Multi-Token POS DApp useful for your decentralized application needs. If you have any questions or encounter issues, please don't hesitate to open an issue on this repository. Enjoy building your multi-token POS system!

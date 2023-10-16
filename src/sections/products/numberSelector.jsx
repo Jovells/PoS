@@ -1,8 +1,9 @@
 import { IconButton, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import Iconify from 'src/components/iconify';
+import { payMethods } from 'src/constants';
 
-export default function NumberSelector({product, name, quantityAndPrice, setQuantityAndPrice}) {
+export default function NumberSelector({product, name, quantityAndPrice, setQuantityAndPrice, exchangeRate}) {
 
 function handleIncrease(){
   console.log(product)
@@ -11,19 +12,21 @@ function handleIncrease(){
         if (product.quantity <= prev.quantity ){
           return prev
         }
-        const price = quantityAndPrice.paymentCurrency === 'USDT' ? product.price * (prev.quantity + 1) : product.price * (prev.quantity +1) * 1.96
+        console.log({...prev, quantity : prev.quantity + 1n, product} )
+        const price = quantityAndPrice.paymentCurrency === 'USDT' ? product.price * (prev.quantity + 1n) : product.price * (prev.quantity +1n) * exchangeRate
 
-        return {...prev, quantity : prev.quantity + 1, price}  })
+
+        return {...prev, quantity : prev.quantity + 1n, price}  })
 }
 function handleDecrease(){
     
   setQuantityAndPrice(prev=>{
-        if (prev.quantity - 1 < 1 ){
+        if (prev.quantity - 1n < 1n ){
             return prev
         }
-        const price = quantityAndPrice.paymentCurrency === 'USDT' ? product.price * (prev.quantity - 1) : product.price * (prev.quantity -1) * 1.96
+        const price = quantityAndPrice.paymentCurrency === payMethods.USDT? product.price * (prev.quantity - 1n) : product.price * (prev.quantity -1n) * exchangeRate
 
-        return{...prev, quantity : prev.quantity - 1, price}  })
+        return{...prev, quantity : prev.quantity - 1n, price}  })
 }
   return (
     <Stack alignItems={"flex-end"}>
@@ -35,7 +38,7 @@ function handleDecrease(){
           <Iconify icon="humbleicons:plus" />
         </IconButton>
         }}
-        value = {quantityAndPrice.quantity}
+        value = {quantityAndPrice.quantity.toString()}
         >
 
         </TextField>
