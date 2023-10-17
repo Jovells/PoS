@@ -11,6 +11,7 @@ const currencies = ['USDT', 'MATIC', 'USDC', 'DAI'];
 
 export default function NewProduct() {
   const {account, posContract, priceOracleContract, publicClient, usdtContract} = useContracts()
+  console.log(account, posContract, priceOracleContract, publicClient, usdtContract)
     const navigate = useNavigate();
     const [image, setImage] = useState(null);
     const fileInputRef = useRef();

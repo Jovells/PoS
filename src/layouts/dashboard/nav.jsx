@@ -23,13 +23,15 @@ import Scrollbar from 'src/components/scrollbar';
 import { NAV } from './config-layout';
 import navConfig from './config-navigation';
 import { useAccount } from 'wagmi';
+import useContracts from 'src/hooks/contract/useContracts';
+import Address from 'src/components/address';
 
 // ----------------------------------------------------------------------
 
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
-  const walletAccount = useAccount();
-  const isAdmin = walletAccount.address === "0x6435cE1AE109cEC3C7CCD03E851c43AaeD684Cc7";
+  const {isOwner, posOwner} = useContracts();
+  
 
   const upLg = useResponsive('up', 'lg');
 
@@ -56,8 +58,8 @@ export default function Nav({ openNav, onCloseNav }) {
       <Avatar src={account.photoURL} alt="photoURL" />
 
       <Box sx={{ ml: 2 }}>
-        <Typography variant="subtitle2">{account.displayName}</Typography>
-
+        <Typography pl={1} variant="caption" sx={{ color: 'text.primary' }}>Store Owner:</Typography>
+        <Typography variant="subtitle2">{posOwner && <Address chars={6} address= {posOwner} />}</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {account.role}
         </Typography>
@@ -67,7 +69,7 @@ export default function Nav({ openNav, onCloseNav }) {
 
   const renderMenu = (
     <Stack component="nav" spacing={0.5} sx={{ px: 2 }}>
-      {navConfig[isAdmin ? 'admin' : 'user'].map((item) => (
+      {navConfig[isOwner ? 'admin' : 'user'].map((item) => (
         <NavItem key={item.title} item={item} />
       ))}
     </Stack>

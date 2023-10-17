@@ -29,6 +29,8 @@
     "@mui/material": "^5.14.12",
     "@openzeppelin/contracts": "^5.0.0",
     "@rainbow-me/rainbowkit": "^1.1.1",
+    "@tanstack/query-sync-storage-persister": "^4.36.1",
+    "@tanstack/react-query-persist-client": "^4.36.1",
     "@vercel/blob": "^0.13.0",
     "apexcharts": "^3.43.0",
     "date-fns": "^2.30.0",

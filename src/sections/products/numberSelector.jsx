@@ -39,10 +39,8 @@ function handleDecrease(){
         </IconButton>
         }}
         value = {quantityAndPrice.quantity.toString()}
-        >
-
-        </TextField>
-        <Typography variant='caption' color="text.disabled">available: {product.quantity}</Typography>
+        />
+        <Typography variant='caption' color="text.disabled">available: {product.quantity.toString()}</Typography>
     </Stack>
   );
 }

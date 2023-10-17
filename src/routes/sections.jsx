@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+
 import { Outlet, Navigate, useRoutes } from 'react-router-dom';
 import ContractContext from 'src/hooks/contract/contractContext';
 import useContracts from 'src/hooks/contract/useContracts';
-
+import { persistQueryClient, PersistQueryClientProvider, removeOldestQuery } from '@tanstack/react-query-persist-client'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+import usePosAccount from 'src/hooks/contract/usePosAccount';
 import DashboardLayout from 'src/layouts/dashboard';
-import { useAccount } from 'wagmi';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
 export const BlogPage = lazy(() => import('src/pages/blog'));
@@ -16,30 +17,30 @@ export const NewProductPage = lazy(() => import('src/pages/newProduct'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
-const queryClient = new QueryClient();
+
+
+
+// const sessionStoragePersister = createSyncStoragePersister({ storage: window.sessionStorage })
 
 
 // ----------------------------------------------------------------------
-function Inner() {
-  return (
-    <DashboardLayout>
-      <QueryClientProvider client={queryClient}>
-        <ContractContext>
-          <Suspense fallback={'loading'}>
-            <Outlet />
-          </Suspense>
-        </ContractContext>
-      </QueryClientProvider>
-    </DashboardLayout>
-  );
-}
 
 export default function Router() {
-  const { isOwner } = useContracts();
+  const {isOwner}=useContracts();
+
+  
+      const Inner =  
+          <DashboardLayout>
+            <Suspense fallback={'loading'}>
+              <Outlet />
+            </Suspense>
+          </DashboardLayout>
+ 
+  console.log("isOwner", isOwner);
 
   const renderAdmin = isOwner
     ? {
-        element: <Inner />,
+        element: Inner,
         children: [
           { element: <IndexPage />, index: true },
           { path: 'orders', element: <OrdersPage /> },
@@ -53,13 +54,12 @@ export default function Router() {
         ],
       }
     : {
-        path: 'admin',
         element: <Navigate to="/login" replace />,
       };
 
   const routes = useRoutes([
     {
-      element: <Inner />,
+      element: Inner,
       children: [
         { element: <IndexPage />, index: true },
         { path: 'products', element: <ProductsPage /> },
@@ -72,7 +72,7 @@ export default function Router() {
       ],
     },
     {
-      path: 'admin',
+      path: 'admin/*',
       ...renderAdmin,
     },
     {

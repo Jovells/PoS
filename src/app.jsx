@@ -12,6 +12,17 @@ import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { mainnet, polygonMumbai } from 'wagmi/chains';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
+import ContractContext from './hooks/contract/contractContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      cacheTime: Infinity,
+    },
+  },
+})
 
 
 const { chains, publicClient } = configureChains(
@@ -42,9 +53,11 @@ export default function App() {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
         <ThemeProvider>
-
+        <QueryClientProvider client={queryClient}>
+          <ContractContext>
               <Router />
-
+          </ContractContext>
+        </QueryClientProvider>
         </ThemeProvider>
       </RainbowKitProvider>
     </WagmiConfig>

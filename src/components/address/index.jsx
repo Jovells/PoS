@@ -24,8 +24,6 @@ export default function Address({address, chipProps,  otherProps={}, chars, Typo
         >
           {`${address?.slice(0, chars || 3)}...${address?.slice( chars *-1 ||  -3)}`}
         </Typography>} >
-
-      <Button onClick={() => copyToClipboard(address)} >Copy</Button>
     </Chip>
       </Tooltip>
     </Box>
