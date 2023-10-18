@@ -100,7 +100,7 @@ export default function ContractContext({ children }) {
     enabled: !location.pathname.includes('/orders'),
   });
 
-  const orders= []
+  // const orders= []
   const {
     data: orders,
     status: orderStatus,
