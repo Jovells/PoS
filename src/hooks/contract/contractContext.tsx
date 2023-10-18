@@ -152,7 +152,6 @@ export default function ContractContext({ children }) {
       console.log('posOwner', posOwner);
       setPosOwner([posOwner, posOwner === account.address]);
       
-      console.log('oo', oo);
       window.pos = posContract;
     }
     if (!posOwner) {
