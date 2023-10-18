@@ -7,7 +7,7 @@ export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title> Products Details | Havlink Pos </title>
+        <title> Products Details | DPoS </title>
       </Helmet>
 
       <ProductDetails />

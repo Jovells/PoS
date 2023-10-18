@@ -1,4 +1,5 @@
 import numeral from 'numeral';
+import { formatUnits } from 'viem';
 
 // ----------------------------------------------------------------------
 
@@ -7,9 +8,11 @@ export function fNumber(number) {
 }
 
 export function fCurrency(number, currency = "USD") {
-  const format = number ? numeral(number).format('0,0.00') : '';
+  // const format = number ? numeral(number).format('0,0.00') : '';
+  const val = currency === ('USD' || 'USDT')  ? formatUnits(number, 6) : formatUnits(number, 18) ;
 
-  return result(format, '.00') + ' ' + currency;
+  // return result(format, '.00') + ' ' + currency;
+  return parseFloat(val).toFixed(currency===('USD' || 'USDT')? 2 : 5) + " " + currency;
 }
 
 export function fPercent(number) {

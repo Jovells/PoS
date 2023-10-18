@@ -5,6 +5,7 @@ import Iconify from 'src/components/iconify/iconify';
 import { put } from '@vercel/blob';
 import { useNavigate } from 'react-router-dom';
 import useContracts from 'src/hooks/contract/useContracts';
+import { parseUnits } from 'viem';
 
 
 const currencies = ['USDT', 'MATIC', 'USDC', 'DAI'];
@@ -44,33 +45,27 @@ export default function NewProduct() {
         id: faker.string.uuid(),
         imageUrl: blob?.url,
         name: data.name,
-        price: data.price,
-        quantity: data.quantity,
+        price: parseUnits(data.price, 6),
+        initialInventory: data.quantity,
         currency: data.currency,
       };
       console.log(product);
 
-      const hash = await posContract.write.addProduct([product.name, product.price, product.quantity, product.imageUrl])
-      const receipt = publicClient.waitForTransactionReceipt(hash);
-
-      navigate('/products/')
+      const hash = await posContract.write.addProduct([product.name, product.price, product.initialInventory, product.imageUrl])
+      
+      navigate(encodeURI(`/admin/products/mining/${hash}?name=${encodeURIComponent(product.name)}&price=${product.price}&initialInventory=${product.initialInventory}&imageUrl=${encodeURIComponent(product.imageUrl)}`))
     }
   return (
     <div>
       <Typography variant="h4">Create a new product</Typography>
       <Stack mt={2} maxWidth={400} rowGap={2} component={'form'} onSubmit={handleNewProduct}>
         <TextField name='name' label="Product Name" />
-        <Stack gap={1} direction={'row'}>
-          <TextField name="currency" fullWidth select label="Currency">
-            {currencies.map((currency) => (
-              <MenuItem key={currency} value={currency}>
-                {currency}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField name = "price" fullWidth label="Price" />
-        </Stack>
-        <TextField name = "quantity" label="Quantity" />
+
+          <TextField
+          InputProps={{startAdornment: "$\u00a0"}}
+          name = "price" type='number' fullWidth label="Price" />
+
+        <TextField type='number' name = "quantity" label="Quantity" />
         <Stack>
           <Typography pb={1} variant="subtitle2">
             Product Image

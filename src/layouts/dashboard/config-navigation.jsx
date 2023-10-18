@@ -9,34 +9,34 @@ const icon = (name) => (
 const admin = [
   {
     title: 'dashboard',
-    path: '',
+    path: '/admin',
     icon: icon('ic_analytics'),
   },
   {
     title: 'orders',
-    path: 'orders',
+    path: '/admin/orders',
     icon: icon('ic_user'),
   },
   {
     title: 'products',
-    path: 'products',
+    path: '/admin/products',
     icon: icon('ic_cart'),
   },
 ];
 const user = [
   {
     title: 'dashboard',
-    path: '',
+    path: '/',
     icon: icon('ic_analytics'),
   },
   {
     title: 'products',
-    path: 'products',
+    path: '/products',
     icon: icon('ic_cart'),
   },
   {
     title: 'orders',
-    path: 'orders',
+    path: '/orders',
     icon: icon('ic_cart'),
   },
 ];

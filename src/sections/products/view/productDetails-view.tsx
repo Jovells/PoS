@@ -1,52 +1,153 @@
-import { Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import {
+  Button,
+  FormControl,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2/Grid2';
 import Iconify from 'src/components/iconify/iconify';
 import { fCurrency } from 'src/utils/format-number';
 import NumberSelector from '../numberSelector';
 import { LoadingButton } from '@mui/lab';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import useContracts from 'src/hooks/contract/useContracts';
-import {Product} from 'src/hooks/contract/contractContext';
+import { Product } from 'src/hooks/contract/contractContext';
 import { payMethods } from 'src/constants';
-
+import { decodeEventLog } from 'viem';
 
 export default function ProductDetails() {
   const params = useParams();
-  const {products, posContract, priceOracleContract} = useContracts();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { products, account, usdtContract, posContract, publicClient, priceOracleContract } = useContracts();
+
+  let initialProduct: Product;
+  if (params.productId) {
+    initialProduct =
+      products.find((product) => product.productId === BigInt(params.productId)) || ({} as Product);
+  } else if (params.hash) {
+    const sParams = Object.fromEntries(searchParams.entries());
+    initialProduct = {
+      imageUrl: decodeURIComponent(sParams.imageUrl),
+      name: sParams.name,
+      quantity: BigInt(sParams.initialInventory),
+      price: BigInt(sParams.price),
+      initialInventory: BigInt(sParams.initialInventory),
+      sales: 0n,
+    };
+  }
+  const [product, setProduct] = useState(initialProduct);
+  const [mineStatus, setMineStatus] = useState<'mined' | 'mining' | 'reverted'>(
+    params.productId ? 'mined' : 'mining'
+  );
   //@ts-ignore
   const [exchangeRate, setExchangeRate] = useState(0n);
-  useEffect(()=>{
-    async function getExchangeRate(){
-      const [, rate] = await priceOracleContract.read.latestRoundData();
-      setExchangeRate(BigInt(1e20) / rate);
-    }
-    getExchangeRate()
-  })
-  const product = products.find(product => product.productId === BigInt(params.productId)) || {} as Product;
-  console.log(products);
-  const [quantityAndPrice, setQuantityAndPrice] = useState({quantity: 1n, price: product.price, paymentCurrency: payMethods.USDT});
-
-  function handlePaymentCurrency(e){
-    e.preventDefault();
-    const selectedCurrency = e.target.value;
-    setQuantityAndPrice(prev=>{
-      const price = selectedCurrency === 'USDT' ? product.price * prev.quantity : product.price * prev.quantity * exchangeRate
-      return {...prev, price: price, paymentCurrency: selectedCurrency}
-    })
+  async function getAndSetExchangeRate() {
+    const [, rate] = await priceOracleContract.read.latestRoundData();
+    console.log('rate', rate);
+    setExchangeRate(BigInt(1e20) / rate);
+    return rate
   }
-  
-  async function handlePurchase(e){
-    e.preventDefault()
+  useEffect(() => {
+    getAndSetExchangeRate();
+  });
+
+  useEffect(() => {
+    if (mineStatus !== 'mining') return;
+    waitForProductToMine().then(([newMineStatus, productId]) => {
+      setMineStatus(newMineStatus);
+      productId && setProduct((oldProduct) => ({ ...oldProduct, productId: productId }));
+    });
+  }, [mineStatus]);
+
+  async function waitForProductToMine() {
+    try {
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: params.hash });
+
+      const decodedLogs = receipt.logs?.map((log) => {
+        try {
+          return decodeEventLog({
+            abi: posContract.abi,
+            data: log.data,
+            topics: log.topics,
+          });
+        } catch (e) {}
+      });
+
+      return ['mined', decodedLogs.find((log) => log.eventName === 'ProductAdded')?.args.productId];
+    } catch (e) {
+      return ['reverted'];
+    }
+  }
+
+  const [quantityAndPrice, setQuantityAndPrice] = useState({
+    quantity: 1n,
+    price: product.price,
+    paymentCurrency: payMethods.USDT,
+  });
+
+  function handlePaymentCurrency(e) {
+    e.preventDefault();
+    const selectedCurrency = parseInt(e.target.value);
+    setQuantityAndPrice((prev) => {
+      const price =
+        selectedCurrency === payMethods.USDT
+          ? product.price * prev.quantity
+          : product.price * prev.quantity * exchangeRate;
+        console.log('price', price, 'selectedCurrency', selectedCurrency, 'prev', prev, 'exchangeRate', exchangeRate );
+      return { ...prev, price: price, paymentCurrency: selectedCurrency };
+    });
+  }
+
+  async function handlePurchase(e) {
+    e.preventDefault();
     const data = new FormData(e.currentTarget);
     const purchaseDetails = Object.fromEntries(data.entries());
-    purchaseDetails.id = product.productId
-    posContract.write.purchaseProduct([purchaseDetails.id, purchaseDetails.quantity, purchaseDetails.paymentCurrency])
-
-    console.log('purchasing', purchaseDetails)
+    let value = 0n;
+    if (quantityAndPrice.paymentCurrency === payMethods.ETH ){
+      const currentRate = await getAndSetExchangeRate();
+      value = quantityAndPrice.price * quantityAndPrice.quantity * currentRate + 10n;
+    }else{
+    try{
+      const allowance = await usdtContract.read.allowance([account.address, posContract.address]);
+      const allowanceHash = allowance < (quantityAndPrice.price * quantityAndPrice.quantity) && await usdtContract.write.approve([posContract.address, quantityAndPrice.price * quantityAndPrice.quantity]);
+      setMineStatus('mining');
+      await publicClient.waitForTransactionReceipt({hash: allowanceHash})
+    }catch(e){
+      alert(e);
+    }
   }
+    const purchaseHash = await posContract.write.purchaseProduct([
+      product.productId,
+      quantityAndPrice.quantity,
+      quantityAndPrice.paymentCurrency,
+    ], {value});
+    setMineStatus('mining');
+    await publicClient.waitForTransactionReceipt({ hash: purchaseHash });
+    setMineStatus('mined');
+
+    navigate("/orders");
+
+    console.log('purchasing', purchaseDetails);
+  }
+
   return product?.name ? (
-    <Grid mx={'auto'} maxWidth={'lg'} px={2} columnGap={6} rowGap={3} pt={5} container>
+    <Grid
+      component={FormControl}
+      disabled
+      mx={'auto'}
+      className={mineStatus === 'mining' ? 'blink' : ''}
+      maxWidth={'lg'}
+      px={2}
+      columnGap={6}
+      rowGap={3}
+      pt={5}
+      container
+    >
       <Grid
         md={6}
         width={1}
@@ -88,9 +189,8 @@ export default function ProductDetails() {
         overflow={'auto'}
         md={5}
         container
-
-        >
-        <Grid   maxWidth={400} mb={1}>
+      >
+        <Grid maxWidth={400} mb={1}>
           <Typography
             overflow={'hidden'}
             textOverflow={'ellipsis'}
@@ -100,18 +200,24 @@ export default function ProductDetails() {
             {product.name}
           </Typography>
         </Grid>
-        <Grid component={'form'} onSubmit={handlePurchase} container sm={5} md={10} rowGap={3} pt={2}>
-        <Stack
+        <Grid
+          component={'form'}
+          onSubmit={handlePurchase}
+          container
+          sm={5}
+          md={10}
+          rowGap={3}
+          pt={2}
+        >
+          <Stack
             width={1}
             alignItems={'baseline'}
             direction={'row'}
             justifyContent={'space-between'}
             columnGap={2}
           >
-            <Typography >
-              Price
-            </Typography>
-            <Typography variant="h4" >{fCurrency(product.price, product.currency)}</Typography>
+            <Typography>Price</Typography>
+            <Typography variant="h4">{fCurrency(product.price, 'USD' )}</Typography>
           </Stack>
 
           <Stack
@@ -121,10 +227,14 @@ export default function ProductDetails() {
             justifyContent={'space-between'}
             columnGap={2}
           >
-            <Typography >
-              Quantity
-            </Typography>
-            <NumberSelector name="quantity" exchangeRate={exchangeRate} product = {product} quantityAndPrice={quantityAndPrice} setQuantityAndPrice={setQuantityAndPrice} />
+            <Typography>Quantity</Typography>
+            <NumberSelector
+              name="quantity"
+              exchangeRate={exchangeRate}
+              product={product}
+              quantityAndPrice={quantityAndPrice}
+              setQuantityAndPrice={setQuantityAndPrice}
+            />
           </Stack>
           <Stack
             width={1}
@@ -133,10 +243,10 @@ export default function ProductDetails() {
             justifyContent={'space-between'}
             columnGap={2}
           >
-            <Typography >
-              Final price
+            <Typography>Final price</Typography>
+            <Typography>
+              {fCurrency(quantityAndPrice.price, quantityAndPrice.paymentCurrency===payMethods.ETH ?'MATIC':'USDT')}
             </Typography>
-            <Typography >{fCurrency(quantityAndPrice.price, quantityAndPrice.paymentCurrency)}</Typography>
           </Stack>
 
           <Stack
@@ -146,16 +256,25 @@ export default function ProductDetails() {
             justifyContent={'space-between'}
             columnGap={2}
           >
-            <Typography >
-              Payment Currency
-            </Typography>
-            <TextField defaultValue={payMethods.USDT} name={"paymentCurrency"} select onChange={handlePaymentCurrency} >
+            <Typography>Payment Currency</Typography>
+            <TextField
+              defaultValue={payMethods.USDT}
+              name={'paymentCurrency'}
+              select
+              onChange={handlePaymentCurrency}
+            >
               <MenuItem value={payMethods.ETH}>MATIC</MenuItem>
               <MenuItem value={payMethods.USDT}>USDT</MenuItem>
             </TextField>
           </Stack>
 
-          <Button fullWidth size="large" variant="contained" type="submit">
+          <Button
+            disabled={mineStatus !== 'mined'}
+            fullWidth
+            size="large"
+            variant="contained"
+            type="submit"
+          >
             Buy now
           </Button>
         </Grid>

@@ -51,10 +51,14 @@ export default function Router() {
             path: 'products/productDetails/:productId',
             element: <ProductDetailsPage />,
           },
+          {
+            path: 'products/mining/:hash',
+            element: <ProductDetailsPage />,
+          },
         ],
       }
     : {
-        element: <Navigate to="/login" replace />,
+        element: <LoginPage />,
       };
 
   const routes = useRoutes([
@@ -77,16 +81,16 @@ export default function Router() {
     },
     {
       path: 'login',
-      element: isOwner ? <Navigate to="/admin" replace /> : <LoginPage />,
+      element: isOwner ? <Navigate  to="/admin" /> : <LoginPage />,
     },
     {
       path: '404',
-      element: <Page404 />,
+      element: <Page404/>,
     },
 
     {
       path: '*',
-      element: <Navigate to="/404" replace />,
+      element: <Navigate to="/404" />,
     },
   ]);
 

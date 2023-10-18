@@ -23,6 +23,7 @@ import UserTableToolbar from '../user-table-toolbar';
 import { emptyRows, applyFilter, getComparator } from '../utils';
 import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
+import useContracts from 'src/hooks/contract/useContracts';
 
 // ----------------------------------------------------------------------
 
@@ -39,6 +40,7 @@ export const orders = [...Array(24)].map((_, index) => ({
 }));
 
 export default function UserPage() {
+  const {orders}= useContracts()
   const [page, setPage] = useState(0);
 
   const [order, setOrder] = useState('asc');

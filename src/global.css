@@ -1,2 +1,14 @@
 /* scrollbar */
 @import 'simplebar-react/dist/simplebar.min.css';
+
+.blink {
+    opacity: 0.5;
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    50% {
+      opacity: 0.2;
+    }
+ 
+  }
