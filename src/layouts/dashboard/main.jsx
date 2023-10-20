@@ -5,12 +5,16 @@ import Box from '@mui/material/Box';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { NAV, HEADER } from './config-layout';
+import { useQueryClient } from '@tanstack/react-query';
+import useContracts from 'src/hooks/contract/useContracts';
+import Loader from 'src/components/Loader';
 
 // ----------------------------------------------------------------------
 
 const SPACING = 8;
 
 export default function Main({ children, sx, ...other }) {
+  const {isLoading} = useContracts();
   const lgUp = useResponsive('up', 'lg');
 
   return (
@@ -31,6 +35,7 @@ export default function Main({ children, sx, ...other }) {
       }}
       {...other}
     >
+      {isLoading && <Loader />}
       {children}
     </Box>
   );

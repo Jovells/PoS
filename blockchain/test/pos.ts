@@ -14,7 +14,7 @@ describe("Pos", function () {
 
   let deployPos = async () => {
 
-    const PRICE_ORACLE_ADDRESS = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
+    const PRICE_ORACLE_ADDRESS = "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada";
     const MOCK_USDT_ADDRESS = "0x77D670bd1363AC1c28f312139f68e66daeaab9d1";
 
     // Contracts are deployed using the first signer/account by default
@@ -23,7 +23,7 @@ describe("Pos", function () {
 
     const usdt = await hre.viem.deployContract("MockUSDT", []);
     const priceOracle = await hre.viem.deployContract("PriceOracle");
-    const pos = await hre.viem.deployContract("Pos", [usdt.address, priceOracle.address]);
+    const pos = await hre.viem.deployContract("Pos", [owner.account.address, 1n, usdt.address, priceOracle.address]);
 
     const publicClient = await hre.viem.getPublicClient();
 
@@ -88,6 +88,7 @@ describe("Pos", function () {
       );
       const [,exchangeRate] = await priceOracle.read.latestRoundData();
       const totalEthPurchacePrice = purchaseQuantity* productPrice * (BigInt(1e20) / exchangeRate);
+
       
       describe("actions", function () {
         
@@ -108,7 +109,7 @@ describe("Pos", function () {
           const [_, productQuantityAfter, _1] = await pos.read.products([BigInt(1)]);
 
           expect(productQuantityAfter).to.equal(productQuantityBefore - BigInt(1));
-          receiptId = await pos.read.numTransactions();
+          receiptId = await pos.read.numSales();
           const purchaseReceipt = await pos.read.receipts([BigInt(1)]);
 
           expect(purchaseReceipt).to.deep.equal(
@@ -117,7 +118,8 @@ describe("Pos", function () {
               productId,
               purchaseQuantity,
               price * purchaseQuantity,
-              payMethods.USDT
+              payMethods.USDT,
+              false
             ])
 
         })
@@ -125,8 +127,9 @@ describe("Pos", function () {
           const buyerBalanceBefore = await usdtAsOtherAccount.read.balanceOf([otherAccount.account.address])
           const hash = await pos.write.refund([receiptId]);
           const buyerBalanceAfter = await usdtAsOtherAccount.read.balanceOf([otherAccount.account.address])
-          const receipt =  await publicClient.waitForTransactionReceipt({ hash });
+          const receipt =  await pos.read.receipts([receiptId]);
           const productAFter = await pos.read.products([productId]);
+          expect(receipt[6]).to.equal(true);
           expect(productAFter).to.deep.equal([productPrice, initialProductInventory, BigInt(0)]);
           expect(buyerBalanceAfter).to.equal(buyerBalanceBefore + (productPrice * purchaseQuantity))
         })
@@ -139,7 +142,7 @@ describe("Pos", function () {
             const [_, productQuantityAfter, _1] = await pos.read.products([BigInt(1)]);
             
             expect(productQuantityAfter).to.equal(productQuantityBefore - BigInt(1));
-            receiptId = await pos.read.numTransactions();
+            receiptId = await pos.read.numSales();
             const purchaseReceipt = await pos.read.receipts([receiptId]);
             console.log("price: ", price, "purchaseQuantity ", purchaseQuantity, "exchangeRate",  exchangeRate )
   
@@ -149,7 +152,8 @@ describe("Pos", function () {
                 productId,
                 purchaseQuantity,
                 totalEthPurchacePrice,
-                payMethods.ETH
+                payMethods.ETH,
+                false
               ])
   
           
@@ -159,11 +163,22 @@ describe("Pos", function () {
           const buyerBalanceBefore = await publicClient.getBalance({address: otherAccount.account.address});
           const hash = await pos.write.refund([receiptId]);
           const buyerBalanceAfter = await publicClient.getBalance({address: otherAccount.account.address});
-          const receipt =  await publicClient.waitForTransactionReceipt({ hash });
           const productAFter = await pos.read.products([productId]);
+          const receipt =  await pos.read.receipts([receiptId]);
+          expect(receipt[6]).to.equal(true);
           expect(productAFter).to.deep.equal([productPrice, initialProductInventory, BigInt(0)]);
           expect(buyerBalanceAfter).to.equal(buyerBalanceBefore + totalEthPurchacePrice)
 
+        })
+
+        it('shoould be able to fetch some products', async function(){
+          const someProducts = await pos.read.getProducts([1n, 10n]);
+          console.log('someProducts', someProducts)
+        })
+        it('shoould be able to fetch some receipts', async function(){
+          const someReceipts = await pos.read.getReceipts([1n, 10n]);
+          const someBuyerReceipts = await pos.read.getBuyerReceipts([otherAccount.account.address, 1n, 10n]);
+          console.log('someReceipts', someBuyerReceipts)
         })
 
 

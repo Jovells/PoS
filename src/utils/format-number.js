@@ -1,3 +1,4 @@
+import { Tooltip } from '@mui/material';
 import numeral from 'numeral';
 import { formatUnits } from 'viem';
 
@@ -7,12 +8,15 @@ export function fNumber(number) {
   return numeral(number).format();
 }
 
-export function fCurrency(number, currency = "USD") {
+export function fCurrency(number, currency = "USD", units) {
   // const format = number ? numeral(number).format('0,0.00') : '';
-  const val = currency === ('USD' || 'USDT')  ? formatUnits(number, 6) : formatUnits(number, 18) ;
+  const val = currency.includes('USD')  ? formatUnits(number, 6) : formatUnits(number, 18) ;
 
   // return result(format, '.00') + ' ' + currency;
-  return parseFloat(val).toFixed(currency===('USD' || 'USDT')? 2 : 5) + " " + currency;
+  const finalValue = parseFloat(val).toFixed(units || (currency.includes('USD') ? 2 : 5)) + " " + currency;
+  console.log('currency', currency, 'finalValue', units || (currency.includes('USD') ? 2 : 5))
+
+  return finalValue ;
 }
 
 export function fPercent(number) {

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -24,6 +23,9 @@ import { emptyRows, applyFilter, getComparator } from '../utils';
 import { faker } from '@faker-js/faker';
 import { sample } from 'lodash';
 import useContracts from 'src/hooks/contract/useContracts';
+import { payMethods, transactionTypes } from 'src/constants';
+import Address from 'src/components/address';
+import { fCurrency } from 'src/utils/format-number';
 
 // ----------------------------------------------------------------------
 
@@ -31,16 +33,16 @@ export const orders = [...Array(24)].map((_, index) => ({
   id: faker.string.uuid(),
   avatarUrl: `/assets/images/avatars/avatar_${index + 1}.jpg`,
   name: faker.commerce.productName(),
-  customer: faker.finance.ethereumAddress(),
+  buyer: faker.finance.ethereumAddress(),
   date: faker.date.past(),
   status: sample(['completed', 'refunded']),
-  txId: faker.finance.ethereumAddress(),
-  amount: faker.finance.amount(),
+  transactionHash: faker.finance.ethereumAddress(),
+  totalAmount: faker.finance.amount(),
   quantity: faker.datatype.number({ min: 1, max: 1000 }),
 }));
 
 export default function UserPage() {
-  const {orders}= useContracts()
+  const {orders, posContract}= useContracts();
   const [page, setPage] = useState(0);
 
   const [order, setOrder] = useState('asc');
@@ -134,12 +136,12 @@ export default function UserPage() {
                 onRequestSort={handleSort}
                 onSelectAllClick={handleSelectAllClick}
                 headLabel={[
-                  { id: 'txId', label: 'Tx Id' },
-                  { id: 'product', label: 'Product' },
-                  { id: 'customer', label: 'Customer' },
-                  { id: 'date', label: 'Date' },
+                  { id: 'TransactionHash', label: 'Tx Id' },
+                  { id: 'ProductId', label: 'Product' },
+                  { id: 'buyer', label: 'buyer' },
+                  { id: 'Time', label: 'timestamp' },
                   { id: 'quantity', label: 'Quantity', align: 'center' },
-                  { id: 'amount', label: 'Amount', align: 'center' },
+                  { id: 'Total Amount', label: 'totalAmount', align: 'center' },
                   { id: 'status', label: 'Status' },
                   { id: '' },
                 ]}
@@ -149,15 +151,16 @@ export default function UserPage() {
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row) => (
                     <UserTableRow
-                      key={row.id}
-                      name={row.name}
-                      customer={row.customer}
-                      amount={row.amount}
-                      txId={row.txId}
-                      status={row.status}
-                      date={row.date}
+                    receiptId={row.receiptId.toString()}
+                      key={row.transactionHash}
+                      productId={row.productId.toString()}
+                      buyer={row.buyer}
+                      totalAmount={fCurrency(row.totalAmount, row.payMethod === payMethods.ETH? "MATIC" : "USDT", 5)}
+                      transactionHash={row.transactionHash}
+                      status={row.transactionType === transactionTypes.refund? 'refunded': 'completed'}
+                      timestamp={parseInt(row.timestamp * 1000n)}
                       avatarUrl={row.avatarUrl}
-                      quantity={row.quantity}
+                      quantity={row.quantity.toString()}
                       selected={selected.indexOf(row.name) !== -1}
                       handleClick={(event) => handleClick(event, row.name)}
                     />

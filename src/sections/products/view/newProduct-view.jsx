@@ -53,7 +53,7 @@ export default function NewProduct() {
 
       const hash = await posContract.write.addProduct([product.name, product.price, product.initialInventory, product.imageUrl])
       
-      navigate(encodeURI(`/admin/products/mining/${hash}?name=${encodeURIComponent(product.name)}&price=${product.price}&initialInventory=${product.initialInventory}&imageUrl=${encodeURIComponent(product.imageUrl)}`))
+      navigate(encodeURI(`/admin/posAddress/${posContract.address}/products/mining/${hash}?name=${encodeURIComponent(product.name)}&price=${product.price}&initialInventory=${product.initialInventory}&imageUrl=${encodeURIComponent(product.imageUrl)}`))
     }
   return (
     <div>
@@ -63,7 +63,7 @@ export default function NewProduct() {
 
           <TextField
           InputProps={{startAdornment: "$\u00a0"}}
-          name = "price" type='number' fullWidth label="Price" />
+          name = "price"  fullWidth label="Price" />
 
         <TextField type='number' name = "quantity" label="Quantity" />
         <Stack>

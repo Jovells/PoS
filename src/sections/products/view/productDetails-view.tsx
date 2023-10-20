@@ -18,12 +18,15 @@ import useContracts from 'src/hooks/contract/useContracts';
 import { Product } from 'src/hooks/contract/contractContext';
 import { payMethods } from 'src/constants';
 import { decodeEventLog } from 'viem';
+import { ContractTransactionResponse } from 'ethers';
+import { useAccount } from 'wagmi';
 
 export default function ProductDetails() {
   const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { products, account, usdtContract, posContract, publicClient, priceOracleContract } = useContracts();
+  const account = useAccount()
+  const { products, routeLinks, usdtContract, isOwner, posContract, publicClient, priceOracleContract } = useContracts();
 
   let initialProduct: Product;
   if (params.productId) {
@@ -49,8 +52,9 @@ export default function ProductDetails() {
   async function getAndSetExchangeRate() {
     const [, rate] = await priceOracleContract.read.latestRoundData();
     console.log('rate', rate);
-    setExchangeRate(BigInt(1e20) / rate);
-    return rate
+    const exRate = BigInt(1e20) / rate;
+    setExchangeRate(exRate);
+    return exRate
   }
   useEffect(() => {
     getAndSetExchangeRate();
@@ -105,34 +109,49 @@ export default function ProductDetails() {
 
   async function handlePurchase(e) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const purchaseDetails = Object.fromEntries(data.entries());
     let value = 0n;
     if (quantityAndPrice.paymentCurrency === payMethods.ETH ){
       const currentRate = await getAndSetExchangeRate();
-      value = quantityAndPrice.price * quantityAndPrice.quantity * currentRate + 10n;
+      value = product.price * quantityAndPrice.quantity * currentRate;
+      console.log('ex', quantityAndPrice,'rate', currentRate, 'v', value)
     }else{
     try{
+      
       const allowance = await usdtContract.read.allowance([account.address, posContract.address]);
-      const allowanceHash = allowance < (quantityAndPrice.price * quantityAndPrice.quantity) && await usdtContract.write.approve([posContract.address, quantityAndPrice.price * quantityAndPrice.quantity]);
-      setMineStatus('mining');
-      await publicClient.waitForTransactionReceipt({hash: allowanceHash})
+      // const allowance = 0n
+      console.log('allowance', allowance);
+      if(allowance < (quantityAndPrice.price * quantityAndPrice.quantity)){
+        const allowanceHash = await usdtContract.write.approve([posContract.address, quantityAndPrice.price * quantityAndPrice.quantity]);     
+        setMineStatus('mining');
+        await publicClient.waitForTransactionReceipt({hash: allowanceHash})
+      }
     }catch(e){
       alert(e);
+      setMineStatus('reverted');
+      console.log(e)
     }
   }
-    const purchaseHash = await posContract.write.purchaseProduct([
-      product.productId,
-      quantityAndPrice.quantity,
-      quantityAndPrice.paymentCurrency,
-    ], {value});
-    setMineStatus('mining');
+  setMineStatus('mining');
+  console.log(product, quantityAndPrice)
+  const args:[bigint, bigint, number]  = [
+    product.productId,
+    quantityAndPrice.quantity,
+    quantityAndPrice.paymentCurrency,
+  ]
+  try {
+    console.log('simulating', value);
+    // await posContract.simulate.purchaseProduct(args, {value});
+    const purchaseHash = await posContract.write.purchaseProduct(args, {value}) ;
     await publicClient.waitForTransactionReceipt({ hash: purchaseHash });
     setMineStatus('mined');
+  
+    navigate(routeLinks.orders);
+  } catch (e) {
+    console.log('error', e);
+    setMineStatus('reverted');
+  }
 
-    navigate("/orders");
 
-    console.log('purchasing', purchaseDetails);
   }
 
   return product?.name ? (
@@ -269,13 +288,13 @@ export default function ProductDetails() {
           </Stack>
 
           <Button
-            disabled={mineStatus !== 'mined'}
+            disabled={mineStatus == 'mining'}
             fullWidth
             size="large"
             variant="contained"
             type="submit"
           >
-            Buy now
+            {isOwner?  "Update Product" : "Buy now" }
           </Button>
         </Grid>
       </Grid>

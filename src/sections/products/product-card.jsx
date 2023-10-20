@@ -12,10 +12,12 @@ import Label from 'src/components/label';
 import { ColorPreview } from 'src/components/color-utils';
 import { RouterLink } from 'src/routes/components';
 import { CardActionArea } from '@mui/material';
+import useContracts from 'src/hooks/contract/useContracts';
 
 // ----------------------------------------------------------------------
 
 export default function ShopProductCard({ product }) {
+  const {routeLinks} = useContracts();
   const renderStatus = (
     <Label
       variant="filled"
@@ -67,7 +69,7 @@ export default function ShopProductCard({ product }) {
 
   return (
     <Card >
-      <CardActionArea component={RouterLink} to={`/products/productDetails/${product.productId}`}>
+      <CardActionArea component={RouterLink} to={`${routeLinks.productDetails}${product.productId}`}>
       <Box sx={{ pt: '100%', position: 'relative' }}>
         {product.status && renderStatus}
 

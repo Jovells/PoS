@@ -25,12 +25,15 @@ import navConfig from './config-navigation';
 import { useAccount } from 'wagmi';
 import useContracts from 'src/hooks/contract/useContracts';
 import Address from 'src/components/address';
+import { posFactoryAddress } from 'src/constants';
+import { useParams } from 'react-router-dom';
+import { Chip } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
-  const {isOwner, posOwner} = useContracts();
+  const {isOwner, posOwner, posContract} = useContracts();
   
 
   const upLg = useResponsive('up', 'lg');
@@ -43,33 +46,39 @@ export default function Nav({ openNav, onCloseNav }) {
   }, [pathname]);
 
   const renderAccount = (
-    <Box
+    <Stack
+    gap={1} width = {250}
+    
       sx={{
         my: 3,
         mx: 2.5,
         py: 2,
         px: 2.5,
-        display: 'flex',
         borderRadius: 1.5,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
       }}
     >
-      <Avatar src={account.photoURL} alt="photoURL" />
+      {/* <Avatar src={account.photoURL} alt="photoURL" /> */}
 
-      <Box sx={{ ml: 2 }}>
+        {isOwner && <Chip sx={{mb: 0}} size='small' color='primary' label = 'Admin'>
+          </Chip>}
+   
+        <Stack  width={1} justifyContent={'space-between'} alignItems={'center'} direction={'row'}>
         <Typography pl={1} variant="caption" sx={{ color: 'text.primary' }}>Store Owner:</Typography>
-        <Typography variant="subtitle2">{posOwner && <Address chars={6} address= {posOwner} />}</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {account.role}
-        </Typography>
-      </Box>
-    </Box>
+          <Typography variant="subtitle2">{posOwner && <Address chars={3} address= {posOwner} />}</Typography>
+        </Stack>
+        <Stack width={1}  justifyContent={'space-between'} direction={'row'}>
+        <Typography pl={1} variant="caption" sx={{ color: 'text.primary' }}>Contract Address:</Typography>
+          <Typography variant="subtitle2">{posContract.address && <Address chars={3} address= {posContract.address} />}</Typography>
+        </Stack>
+
+    </Stack>
   );
 
   const renderMenu = (
     <Stack component="nav" spacing={0.5} sx={{ px: 2 }}>
-      {navConfig[isOwner ? 'admin' : 'user'].map((item) => (
+      {navConfig.map((item) => (
         <NavItem key={item.title} item={item} />
       ))}
     </Stack>
@@ -170,13 +179,18 @@ Nav.propTypes = {
 
 function NavItem({ item }) {
   const pathname = usePathname();
+  const {isOwner} = useContracts();
+  const {posAddress} = useParams();
 
-  const active = item.path === pathname;
+  
+  const path =  posAddress ?  '/posAddress/' + posAddress + item.path : item.path;
+  const active = pathname.includes(path)
+  
 
   return (
     <ListItemButton
       component={RouterLink}
-      href={item.path}
+      href={isOwner?'/admin'+ path : '/user'+ path}
       sx={{
         minHeight: 44,
         borderRadius: 0.75,

@@ -21,7 +21,7 @@ import { decodeEventLog } from 'viem';
 
 export default function ProductsView() {
   const [openFilter, setOpenFilter] = useState(false);
-  const { publicClient, products, account, posContract } = useContracts();
+  const { publicClient, products, account, isOwner, posContract } = useContracts();
 
   const handleOpenFilter = () => {
     setOpenFilter(true);
@@ -35,14 +35,14 @@ export default function ProductsView() {
     <Container>
       <Stack justifyContent={'space-between'} direction="row" mb={5}>
         <Typography variant="h4">Products</Typography>
-        <Button
+     { isOwner &&  <Button
           variant="contained"
           LinkComponent={RouterLink}
           href="new"
           startIcon={<Iconify icon="basil:plus-solid" />}
         >
           Add product
-        </Button>
+        </Button>}
       </Stack>
 
       <Stack
@@ -64,7 +64,7 @@ export default function ProductsView() {
       </Stack>
 
       <Grid container spacing={3}>
-        {products.map((product) => (
+        {products && products.map((product) => (
           <Grid key={product.productId} xs={12} sm={6} md={3}>
             <ProductCard product={product} />
           </Grid>

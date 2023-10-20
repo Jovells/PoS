@@ -16,13 +16,7 @@ import ContractContext from './hooks/contract/contractContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      cacheTime: Infinity,
-    },
-  },
-})
+const queryClient = new QueryClient()
 
 
 const { chains, publicClient } = configureChains(
@@ -54,9 +48,7 @@ export default function App() {
       <RainbowKitProvider chains={chains}>
         <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <ContractContext>
               <Router />
-          </ContractContext>
         </QueryClientProvider>
         </ThemeProvider>
       </RainbowKitProvider>

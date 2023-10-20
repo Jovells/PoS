@@ -8,17 +8,17 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 contract Pos {
     address public owner;  // The owner of the contract
     uint256 public totalSales;  // Total sales amount
-    uint256 public numTransactions;  // Total number of transactions
+    uint256 public numSales;  // Total number of transactions
+    uint256 public numRefunds;  // Total number of refunds
     uint256 public numProducts; // total number of product
     // uint256 public CONVERSION_RATE = 1950000000000;
-    address public PRICE_ORACLE_ADDRESS = 0x0715A7794a1dc8e42615F059dD6e406A6594651A;
+    address public PRICE_ORACLE_ADDRESS = 0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada;
     address public MOCK_USDT_ADDRESS = 0x22e5768fD06A7FB86fbB928Ca14e9D395f7C5363;
+    uint256 public storeId;
 
-    function setPriceOracleAddress (address _PRICE_ORACLE_ADDRESS) public onlyOwner{
+    function setMockUSDTAndPriceOracleAddress(address _MOCK_USDT_ADDRESS, address _PRICE_ORACLE_ADDRESS) public{
+        require(msg.sender == owner, "Only the Owner can perform this operation");
         PRICE_ORACLE_ADDRESS = _PRICE_ORACLE_ADDRESS;
-    }
-
-    function setMockUSDTAddress (address _MOCK_USDT_ADDRESS) public onlyOwner{
         MOCK_USDT_ADDRESS = _MOCK_USDT_ADDRESS;
     }
 
@@ -32,6 +32,11 @@ contract Pos {
     enum PayMethod {
         ETH,
         USDT
+    }
+
+    enum TransactionType{
+        sale,
+        refund
     }
 
     // Struct to represent a product
@@ -48,7 +53,8 @@ contract Pos {
         uint256 productId;
         uint256 quantity;
         uint256 totalAmount;
-        PayMethod payMethod;   
+        PayMethod payMethod;
+        bool refunded; 
     }
 
     // Mapping to store products by their IDs
@@ -61,20 +67,64 @@ contract Pos {
     // Mapping to track receipts
     mapping(uint256 => Receipt) public receipts;
 
-    // Event to log sales transactions
-    event Sale(address indexed buyer, uint256 productId, uint256 quantity, uint256 totalAmount, PayMethod payMethod);
 
-    // Event to log refunds
-    event Refund(address indexed buyer, uint256 productId, uint256 totalAmount, PayMethod paymethod);
+    // Event to log sales transactions
+    event SaleOrRefund(address indexed buyer, TransactionType transactionType, uint256 indexed receiptId, uint256 productId, uint256 quantity, uint256 totalAmount, PayMethod payMethod);
 
     event ProductAdded(uint256 productId, string name, uint256 price, uint256 initialInventory, string imageUrl);
 
-    constructor(address _MOCK_USDT_ADDRESS, address _PRICE_ORACLE_ADDRESS) {
-        owner = msg.sender;
+    constructor( address _owner, uint256 _storeId, address _MOCK_USDT_ADDRESS, address _PRICE_ORACLE_ADDRESS) {
+        owner = _owner;
         // set payment ERC20 token
         MOCK_USDT_ADDRESS = _MOCK_USDT_ADDRESS;
         // set price oracle
         PRICE_ORACLE_ADDRESS = _PRICE_ORACLE_ADDRESS;
+        // set store id
+        storeId = _storeId;
+    }
+
+    function getProducts(uint256 start, uint256 end) public view returns (Product[] memory) {
+        require(start <= end, "Invalid range");
+        if (end > numProducts) {
+            end = numProducts;
+        }
+        uint256 quantity = end - start + 1;
+        Product[] memory _products = new Product[](quantity);
+        for (uint256 i = 0; i < numProducts; i++) {
+            _products[i] = products[i + 1];
+        }
+        return _products;
+    }
+
+    function getReceipts(uint256 start, uint256 end) public view returns (Receipt[] memory) {
+        require(start <= end, "Invalid range");
+        if (end > numSales) {
+            end = numSales;
+        }
+        uint256 quantity = end - start + 1;
+        Receipt[] memory _receipts = new Receipt[](quantity);
+        for (uint256 i = 0; i < numSales; i++) {
+            _receipts[i] = receipts[i + 1];
+        }
+        return _receipts;
+    }
+
+    //get a user's receipts
+    function getBuyerReceipts(address _buyer, uint256 start, uint256 end) public view returns (Receipt[] memory) {
+        require(start <= end, "Invalid range");
+        if (end > numSales) {
+            end = numSales;
+        }
+        uint256 quantity = end - start + 1;
+        Receipt[] memory _receipts = new Receipt[](quantity);
+        uint256 j = 0;
+        for (uint256 i = 0; i < numSales; i++) {
+            if (receipts[i + 1].buyer == _buyer){
+                _receipts[j] = receipts[i + 1];
+                j++;
+            }
+        }
+        return _receipts;
     }
 
     // Function to add a product to the store
@@ -116,26 +166,29 @@ contract Pos {
         products[_productId].quantity -= _quantity;
         products[_productId].sales += _quantity;
         totalSales += totalPrice;
-        numTransactions++;
-        receipts[numTransactions] = Receipt(numTransactions, msg.sender, _productId, _quantity, totalPrice, _payMethod);
+        numSales++;
+        receipts[numSales] = Receipt(numSales, msg.sender, _productId, _quantity, totalPrice, _payMethod, false);
         
         // Emit a sale event
-        emit Sale(msg.sender, _productId, _quantity, totalPrice, _payMethod);
+        emit SaleOrRefund(msg.sender, TransactionType.sale, numSales, _productId, _quantity, totalPrice, _payMethod);
     }
 
     // Function to issue a refund
     function refund(uint256 _receiptId) external onlyOwner {
-        require(_receiptId <= numTransactions, "Invalid receipt");
+        require(_receiptId <= numSales, "Invalid receipt");
         Receipt memory _receipt = receipts[_receiptId];
+        require(_receipt.refunded == false, "Purchase already refunded");
 
         uint256 _productId = _receipt.productId;
         uint256 _quantity = _receipt.quantity;
         uint256 _totalAmount = _receipt.totalAmount;
+        receipts[_receiptId].refunded = true;
 
         // update sales stuff
         products[_productId].quantity += _quantity;
         products[_productId].sales -= _quantity;
         totalSales -= _totalAmount;
+        numRefunds++;
 
         // issue refund
         if (_receipt.payMethod == PayMethod.ETH){
@@ -147,7 +200,7 @@ contract Pos {
             IERC20(MOCK_USDT_ADDRESS).transfer(_receipt.buyer, _receipt.totalAmount);
         }
 
-        emit Refund(msg.sender, _productId, _totalAmount, _receipt.payMethod);
+        emit SaleOrRefund(msg.sender, TransactionType.refund , _receiptId, _productId, _quantity, _totalAmount, _receipt.payMethod);
     }
 
     // Function to withdraw funds from the contract (only the owner can do this)

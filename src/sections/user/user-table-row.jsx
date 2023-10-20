@@ -14,65 +14,81 @@ import IconButton from '@mui/material/IconButton';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Address from 'src/components/address';
+import useContracts from 'src/hooks/contract/useContracts';
 
 // ----------------------------------------------------------------------
 
 export default function UserTableRow({
   selected,
-  name,
+  productId,
+  receiptId,
   avatarUrl,
-  customer,
-  date,
+  buyer,
+  timestamp,
   quantity,
-  amount,
+  totalAmount,
   status,
   handleClick,
-  txId
+  transactionHash
 }) {
   const [open, setOpen] = useState(null);
+  const {posContract, publicClient} = useContracts();
+  const [mineStatus, setMineStatus] = useState('mined')
 
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
   };
 
-  const handleRefund = () => {
+  const handleRefund = async () => {
+    console.log('pid', productId, 'buyer', buyer)
     
     setOpen(null);
+    try {
+      const hash = await posContract.write.refund([receiptId]);
+      setMineStatus('mining');
+      console.log('hash', hash);
+      await publicClient.waitForTransactionReceipt({hash});
+      setMineStatus('mined');
+    } catch (err) {
+      console.log(err)
+      setMineStatus('reverted')
+    }
+        
   };
 
   return (
     <>
-      <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+      <TableRow className={mineStatus === 'mining' ? "blink" : ""} hover tabIndex={-1} role="checkbox" selected={selected}>
 
         <TableCell>
-          <Address address={txId}/>
+          <Address address={transactionHash}/>
           </TableCell>
 
         <TableCell padding='none' component="th" scope="row" >
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar alt={name} src={avatarUrl} />
+            <Avatar alt={productId} src={avatarUrl} />
             <Typography variant="subtitle2" noWrap>
-              {name}
+              {productId}
             </Typography>
           </Stack>
         </TableCell>
 
-        <TableCell><Address address = {customer} /></TableCell>
+        <TableCell><Address address = {buyer} /></TableCell>
 
         <TableCell>
           <Stack>
             <Typography>
-          {date.toLocaleDateString('en-GB')}
+          {new Date(timestamp).toLocaleDateString('en-GB')}
             </Typography>
             <Typography variant='caption'>
-          {date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true,  })}
+          {new Date(timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true,  })}
             </Typography>
           </Stack>
         </TableCell>
 
         <TableCell align="center">{quantity}</TableCell>
 
-        <TableCell>{amount}</TableCell>
+        <TableCell>{totalAmount}</TableCell>
 
         <TableCell>
           <Label color={(status === 'refunded' && 'error') || 'success'}>{status}</Label>

@@ -8,10 +8,13 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Iconify from 'src/components/iconify';
+import { Box, CircularProgress, Stack } from '@mui/material';
+import useContracts from 'src/hooks/contract/useContracts';
 
 // ----------------------------------------------------------------------
 
 export default function UserTableToolbar({ numSelected, filterName, onFilterName }) {
+  const {isFetchingOrders} = useContracts()
   return (
     <Toolbar
       sx={{
@@ -29,7 +32,7 @@ export default function UserTableToolbar({ numSelected, filterName, onFilterName
         <Typography component="div" variant="subtitle1">
           {numSelected} selected
         </Typography>
-      ) : (
+      ) : (<Stack gap={3} alignItems={'center'} direction ={'row'}>
         <OutlinedInput
           value={filterName}
           onChange={onFilterName}
@@ -39,10 +42,15 @@ export default function UserTableToolbar({ numSelected, filterName, onFilterName
               <Iconify
                 icon="eva:search-fill"
                 sx={{ color: 'text.disabled', width: 20, height: 20 }}
-              />
+                />
             </InputAdornment>
           }
-        />
+          />
+          {isFetchingOrders && <Box >
+            <CircularProgress size={40} />
+            </Box>
+            }
+          </Stack>
       )}
 
       {numSelected > 0 ? (
